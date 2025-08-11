@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Daily Tracker — Life Cycle</title>
+  <style>
+    :root{
+      --bg:#0f1724; --card:#0b1220; --accent:#6ee7b7; --muted:#94a3b8; --glass: rgba(255,255,255,0.03);
+      --glass-2: rgba(255,255,255,0.02); --shadow: 0 8px 24px rgba(2,6,23,0.6);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;background:linear-gradient(180deg,#071127 0%, #081124 60%, #071127 100%);margin:0;color:#e6eef6}
+    .wrap{max-width:1100px;margin:36px auto;padding:28px}
+
+    header{display:flex;align-items:center;gap:16px}
+    header h1{margin:0;font-size:20px;letter-spacing:-0.2px}
+    header p{margin:0;color:var(--muted);font-size:13px}
+
+    .controls{display:flex;gap:10px;margin:18px 0}
+    .btn{background:var(--glass);border:1px solid rgba(255,255,255,0.04);color:var(--accent);padding:8px 12px;border-radius:10px;font-weight:600;cursor:pointer}
+    .btn.secondary{color:var(--muted);background:transparent}
+
+    .layout{display:grid;grid-template-columns: 1fr 380px;gap:18px}
+
+    /* Life cycle canvas */
+    .canvas{background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);border-radius:14px;padding:22px;box-shadow:var(--shadow)}
+    .stage-container{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;padding:18px}
+
+    .stage{width:180px;min-height:90px;background:var(--card);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:8px;justify-content:center;align-items:flex-start;border:1px solid var(--glass-2)}
+    .stage h3{margin:0;font-size:15px}
+    .stage p{margin:0;color:var(--muted);font-size:13px}
+    .stage .tag{margin-top:6px;background:rgba(255,255,255,0.02);padding:6px 8px;border-radius:8px;font-size:12px;color:var(--muted)}
+
+    svg.flow{width:100%;height:280px}
+    .sidebar{background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);padding:18px;border-radius:12px}
+    label{font-size:13px;color:var(--muted);display:block;margin-bottom:8px}
+    .card{background:var(--card);padding:12px;border-radius:10px;margin-bottom:12px;border:1px solid var(--glass-2)}
+    .card h4{margin:0 0 8px 0}
+    .list{display:flex;flex-direction:column;gap:8px}
+    .list .item{display:flex;gap:8px;align-items:center}
+    .bullet{width:10px;height:10px;border-radius:3px;background:var(--accent);flex:0 0 10px}
+    footer{margin-top:18px;color:var(--muted);font-size:13px}
+
+    /* small screens */
+    @media (max-width:900px){
+      .layout{grid-template-columns:1fr;}
+      svg.flow{height:200px}
+    }
+
+    /* small animation */
+    .pulse{animation:pulse 2s infinite}
+    @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(110,231,183,0.12)}50%{box-shadow:0 0 0 10px rgba(110,231,183,0)}100%{box-shadow:0 0 0 0 rgba(110,231,183,0)}}
+
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div style="width:46px;height:46px;border-radius:10px;background:linear-gradient(135deg,#052233,#0b2b3a);display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--accent)">DT</div>
+      <div>
+        <h1>Daily Tracker — Life Cycle</h1>
+        <p>Interactive HTML visualization for two life-cycle views: product (app) and user (daily process).</p>
+      </div>
+    </header>
+
+    <div class="controls">
+      <button class="btn" id="viewProduct">Product Life Cycle</button>
+      <button class="btn" id="viewUser">User Daily Process</button>
+      <button class="btn secondary" id="exportBtn">Export as PNG</button>
+    </div>
+
+    <div class="layout">
+      <main class="canvas" id="mainCanvas">
+
+        <!-- SVG flow visual (dynamically updated) -->
+        <svg class="flow" viewBox="0 0 1000 300" preserveAspectRatio="xMidYMid meet" id="flowSvg"></svg>
+
+        <div class="stage-container" id="stages"></div>
+      </main>
+
+      <aside class="sidebar">
+        <div class="card">
+          <h4>About</h4>
+          <p style="margin:0;color:var(--muted);font-size:13px">Switch between the two modes to see each life-cycle’s stages. Click any stage to highlight it and see tips in the notes area.</p>
+        </div>
+
+        <div class="card">
+          <h4>Notes</h4>
+          <div id="notes" style="color:var(--muted);font-size:13px">Choose a view to load the life cycle.</div>
+        </div>
+
+        <div class="card">
+          <h4>Quick actions</h4>
+          <div class="list">
+            <div class="item"><div class="bullet"></div><div>Use this as a planning template for an app or a daily ritual.</div></div>
+            <div class="item"><div class="bullet"></div><div>Click stages to copy short checklists to clipboard.</div></div>
+          </div>
+        </div>
+
+        <footer>Built with plain HTML/CSS/JS • Click a stage for details</footer>
+      </aside>
+    </div>
+  </div>
+
+  <script>
+    // Two life-cycle definitions
+    const productLife = [
+      {id:'planning',title:'Planning & Research',desc:'Define scope, user needs, and what to track (habits, mood, expenses).'},
+      {id:'design',title:'Design',desc:'Wireframes, UX flows, choose features like reminders, charts, export.'},
+      {id:'development',title:'Development',desc:'Build frontend/backend or a lightweight spreadsheet/template.'},
+      {id:'testing',title:'Testing',desc:'Usability testing and bug fixes; validate tracking accuracy.'},
+      {id:'launch',title:'Launch',desc:'Release to users, app stores, or share templates.'},
+      {id:'usage',title:'Usage & Feedback',desc:'Users track daily and provide feedback for improvements.'},
+      {id:'maintenance',title:'Maintenance & Updates',desc:'Fix bugs, add features, and iterate on UX.'},
+      {id:'evolution',title:'Retirement or Evolution',desc:'Integrate into bigger systems or replace with better solutions.'}
+    ];
+
+    const userLife = [
+      {id:'setup',title:'Setup (Morning)',desc:'Open tracker; set goals and tasks for the day.'},
+      {id:'logging',title:'Ongoing Logging',desc:'Record activities, moods, expenses as they happen.'},
+      {id:'midday',title:'Review & Adjust (Midday)',desc:'Check progress and adjust priorities.'},
+      {id:'final',title:'Final Review (Evening)',desc:'Mark completed items and add end-of-day notes.'},
+      {id:'reflection',title:'Reflection & Insights',desc:'Look at trends and lessons.'},
+      {id:'reset',title:'Reset for Next Day',desc:'Roll over tasks and prep tomorrow.'}
+    ];
+
+    const flowSvg = document.getElementById('flowSvg');
+    const stagesWrap = document.getElementById('stages');
+    const notes = document.getElementById('notes');
+    const viewProduct = document.getElementById('viewProduct');
+    const viewUser = document.getElementById('viewUser');
+    const exportBtn = document.getElementById('exportBtn');
+
+    function clearChildren(el){while(el.firstChild)el.removeChild(el.firstChild)}
+
+    function drawFlow(items){
+      // clear
+      clearChildren(flowSvg);
+      const w = 1000; const h = 300; const margin = 60; const cx = (w-2*margin)/(items.length-1);
+
+      // build curved arrows path between nodes
+      for(let i=0;i<items.length;i++){
+        const x = margin + i*cx;
+        const y = h/2;
+        // node circle
+        const g = document.createElementNS('http://www.w3.org/2000/svg','g');
+        g.setAttribute('transform',`translate(${x},${y})`);
+        // arrow path to next
+        if(i<items.length-1){
+          const nx = margin + (i+1)*cx;
+          const ny = y;
+          const dx = nx - x;
+          const sy = 0;
+          const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+          const cx1 = x + dx*0.35;
+          const cx2 = x + dx*0.65;
+          const d = `M ${x+34} ${y} C ${cx1} ${y-36}, ${cx2} ${y+36}, ${nx-34} ${ny}`;
+          path.setAttribute('d',d);
+          path.setAttribute('stroke','rgba(110,231,183,0.35)');
+          path.setAttribute('fill','none');
+          path.setAttribute('stroke-width','3');
+          path.setAttribute('stroke-linecap','round');
+          flowSvg.appendChild(path);
+
+          // arrowhead (simple)
+          const arrow = document.createElementNS('http://www.w3.org/2000/svg','polygon');
+          arrow.setAttribute('points',`${nx-22},${ny-8} ${nx-8},${ny} ${nx-22},${ny+8}`);
+          arrow.setAttribute('fill','rgba(110,231,183,0.9)');
+          flowSvg.appendChild(arrow);
+        }
+
+        // node visual
+        const outer = document.createElementNS('http://www.w3.org/2000/svg','circle');
+        outer.setAttribute('r','34');
+        outer.setAttribute('fill','transparent');
+        outer.setAttribute('stroke','rgba(255,255,255,0.04)');
+        outer.setAttribute('stroke-width','1.6');
+        g.appendChild(outer);
+
+        const inner = document.createElementNS('http://www.w3.org/2000/svg','circle');
+        inner.setAttribute('r','26');
+        inner.setAttribute('fill','rgba(6,11,15,0.9)');
+        g.appendChild(inner);
+
+        const txt = document.createElementNS('http://www.w3.org/2000/svg','text');
+        txt.setAttribute('y','6');
+        txt.setAttribute('x','0');
+        txt.setAttribute('text-anchor','middle');
+        txt.setAttribute('font-size','10');
+        txt.setAttribute('fill','#c7f7df');
+        txt.setAttribute('font-weight','700');
+        txt.textContent = items[i].title.split(' ')[0];
+        g.appendChild(txt);
+
+        flowSvg.appendChild(g);
+      }
+    }
+
+    function renderStages(items){
+      clearChildren(stagesWrap);
+      items.forEach((s,idx)=>{
+        const div = document.createElement('div');
+        div.className = 'stage';
+        div.id = 'stage-'+s.id;
+        div.innerHTML = `<h3>${idx+1}. ${s.title}</h3><p>${s.desc}</p><div class="tag">Click to copy checklist</div>`;
+        div.addEventListener('click',()=>{selectStage(s)});
+        stagesWrap.appendChild(div);
+      })
+    }
+
+    function selectStage(s){
+      // highlight
+      document.querySelectorAll('.stage').forEach(el=>el.style.boxShadow='none');
+      const el = document.getElementById('stage-'+s.id);
+      el.style.boxShadow = '0 12px 32px rgba(16,38,30,0.55)';
+      el.classList.add('pulse');
+      setTimeout(()=>el.classList.remove('pulse'),1800);
+
+      // show notes
+      notes.innerHTML = `<strong>${s.title}</strong><div style="margin-top:8px;color:var(--muted)">${s.desc}</div>`;
+
+      // prepare checklist text to copy
+      const checklist = generateChecklist(s);
+      navigator.clipboard?.writeText(checklist).then(()=>{
+        notes.innerHTML += `<div style=\"margin-top:8px;color:#9ef8c8;font-size:13px\">Checklist copied to clipboard.</div>`;
+      }).catch(()=>{
+        notes.innerHTML += `<div style=\"margin-top:8px;color:var(--muted);font-size:13px\">(Clipboard not available) Here is the checklist:<pre style=\"white-space:pre-wrap;color:var(--muted);font-size:12px;margin-top:8px\">${checklist}</pre></div>`;
+      });
+    }
+
+    function generateChecklist(s){
+      // a light, generic checklist generator based on stage id
+      const id = s.id;
+      const map = {
+        planning:["Define scope","Interview potential users","List top 10 features","Decide MVP timeframe"],
+        design:["Create wireframes","Build a simple prototype","Define data model","Accessibility check"],
+        development:["Set up repo","Implement UI","Persist data","Add reminders"],
+        testing:["Run usability tests","Fix high-priority bugs","Validate edge cases"],
+        launch:["Prepare release notes","Publish to users","Monitor analytics"],
+        usage:["Collect feedback","Run NPS survey","Prioritize improvements"],
+        maintenance:["Patch bugs","Refactor tech debt","Update dependencies"],
+        evolution:["Decide sunset date","Migrate data","Announce replacement"],
+        setup:["Open tracker","Write 3 main goals","Set any timeboxes"],
+        logging:["Add entry when activity happens","Quick mood note","Snap photo if helpful"],
+        midday:["Check progress","Reprioritize tasks","Schedule remaining time"],
+        final:["Mark completions","Summarize wins","Log leftovers"],
+        reflection:["Check weekly trends","Write one lesson","Celebrate wins"],
+        reset:["Roll uncompleted tasks","Set tomorrow’s top 3","Tidy the tracker"]
+      };
+      const items = map[id] || ["No checklist available"];
+      return `${s.title}\n- ${items.join('\n- ')}`;
+    }
+
+    function loadView(which){
+      if(which==='product'){
+        drawFlow(productLife);
+        renderStages(productLife);
+        notes.innerHTML = '<strong>Product life cycle</strong><div style="margin-top:8px;color:var(--muted)">Best for teams building a daily-tracker app or template.</div>';
+      }else{
+        drawFlow(userLife);
+        renderStages(userLife);
+        notes.innerHTML = '<strong>User daily process</strong><div style="margin-top:8px;color:var(--muted)">Useful for individuals using a tracker every day.</div>';
+      }
+    }
+
+    viewProduct.addEventListener('click',()=>loadView('product'));
+    viewUser.addEventListener('click',()=>loadView('user'));
+
+    // export as PNG (simple SVG to canvas snapshot)
+    exportBtn.addEventListener('click',async ()=>{
+      const svgEl = document.getElementById('flowSvg');
+      const serializer = new XMLSerializer();
+      const svgString = serializer.serializeToString(svgEl);
+      const svgBlob = new Blob([svgString],{type:'image/svg+xml;charset=utf-8'});
+      const url = URL.createObjectURL(svgBlob);
+      const img = new Image();
+      img.onload = function(){
+        const c = document.createElement('canvas');
+        c.width = svgEl.clientWidth*2;
+        c.height = svgEl.clientHeight*2;
+        const ctx = c.getContext('2d');
+        // fill background
+        ctx.fillStyle = '#071127'; ctx.fillRect(0,0,c.width,c.height);
+        ctx.drawImage(img,0,0,c.width,c.height);
+        URL.revokeObjectURL(url);
+        const a = document.createElement('a');
+        a.href = c.toDataURL('image/png');
+        a.download = 'daily-tracker-flow.png';
+        a.click();
+      };
+      img.src = url;
+    });
+
+    // load default view
+    loadView('product');
+  </script>
+</body>
+</html>
